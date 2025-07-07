@@ -24,4 +24,4 @@ COPY pyproject.toml uv.lock .python-version /app/
 RUN uv sync --frozen
 
 # Command to run the service
-CMD ["uv", "run", "python", "user_splitter.py"]
+CMD ["uv", "run", "server.py"]
