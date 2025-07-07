@@ -16,7 +16,6 @@ def send_data_to_supabase(user_info: dict):
             "username": user_info["username"],
             "full_name": user_info["full_name"],
             "profile_link": user_info["profile_link"],
-            "last_post_link": user_info["last_post_link"],
         }
     ).execute()
 
