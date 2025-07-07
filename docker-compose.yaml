@@ -6,3 +6,6 @@ services:
       context: .
       dockerfile: src/services/splitter/Dockerfile
     container_name: splitter_service
+    environment:
+        SUPABASE_URL: ${SUPABASE_URL}
+        SUPABASE_KEY: ${SUPABASE_KEY}
