@@ -9,12 +9,25 @@ services:
     environment:
         SUPABASE_URL: ${SUPABASE_URL}
         SUPABASE_KEY: ${SUPABASE_KEY}
-  splitter_v2:
+  dispatcher:
     build:
       context: .
-      dockerfile: src/services/splitter/Dockerfile
-    container_name: splitter_service_v2
+      dockerfile: src/services/dispatcher/Dockerfile
+    container_name: dispatch_service
     environment:
         SUPABASE_URL: ${SUPABASE_URL}
         SUPABASE_KEY: ${SUPABASE_KEY}
+  scraper:
+    build:
+      context: .
+      dockerfile: src/services/scraper/Dockerfile
+    container_name: scraper_service
+    environment:
+        SUPABASE_URL: ${SUPABASE_URL}
+        SUPABASE_KEY: ${SUPABASE_KEY}
+        RAPID_API_INSTAGRAM_HOST: ${RAPID_API_INSTAGRAM_HOST}
+        RAPID_API_KEY: ${RAPID_API_KEY}
+        GEMINI_API_KEY: ${GEMINI_API_KEY}
+
+
 
