@@ -69,6 +69,7 @@ def generate_comment_from_user_last_post(
 ) -> Tuple[Optional[str], Optional[str]]:
     image_bytes, post_link = get_last_post(user_id)
     if not image_bytes:
+        print("No image post to process")
         return None, None
     image = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
     response = client.models.generate_content(

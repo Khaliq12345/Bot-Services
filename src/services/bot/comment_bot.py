@@ -20,7 +20,7 @@ TIMEOUT = 60000
 def run(playwright: Playwright, username: str, user_id: str):
     # start up the browser and load session if available
     chromium = playwright.firefox  # or "firefox" or "webkit".
-    browser = chromium.launch(headless=False, slow_mo=3000)
+    browser = chromium.launch(slow_mo=3000)
     context = browser.new_context(
         storage_state=f"./{BOT_STORAGE_SESSION_FOLDER}/{username}.json"
     )
@@ -48,18 +48,22 @@ def run(playwright: Playwright, username: str, user_id: str):
         browser.close()
 
 
-def write_comment(page: Page, user_id: str):
+def write_comment(page: Page, user_id: str) -> Optional[str]:
     # generate the comment
     message, post_link = generate_comment_from_user_last_post(user_id)
+    print(f"Comment generated -> {message}")
     # visit the post page and leave a comment
     if not message:
-        raise ValueError("Error generating comment")
+        return None
     if not post_link:
         raise ValueError("Error getting post link")
     page.goto(post_link, timeout=TIMEOUT)
+    print("Post Page Loaded")
     page.get_by_role("textbox", name="Add a comment…").click()
     page.get_by_role("textbox", name="Add a comment…").fill(message)
     page.get_by_role("button", name="Post", exact=True).click()
+    print("Done commenting")
+    return post_link
 
 
 def send_comment(
@@ -67,7 +71,7 @@ def send_comment(
 ):
     with sync_playwright() as playwright:
         with run(playwright, username, user_id) as page:
-            write_comment(page, user_id=user_id)
+            post_link = write_comment(page, user_id=user_id)
             page.wait_for_timeout(60000)
 
             # Save the status to db
@@ -80,6 +84,7 @@ def send_comment(
                     "last_error": None,
                     "last_run": datetime.now().isoformat(),
                     "user": user_id,
+                    "post_link": post_link,
                 }
             ).execute()
 

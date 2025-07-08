@@ -7,7 +7,7 @@ from datetime import timedelta, datetime
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
-parser.add_argument("--creator", type=str)
+parser.add_argument("--creator", type=str, required=True)
 args = parser.parse_args()
 
 NEXT_30_DAYS = datetime.now() + timedelta(30)
@@ -34,8 +34,6 @@ def dispatch_creator(creator: str):
     for record in response.data:
         past_creators = record.get("past_creators")
         if (past_creators) and (creator in past_creators):
-            continue
-        if not record.get("last_post_link"):
             continue
         print(record)
         with get_pika_session() as connection:

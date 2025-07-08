@@ -17,6 +17,11 @@ services:
     environment:
         SUPABASE_URL: ${SUPABASE_URL}
         SUPABASE_KEY: ${SUPABASE_KEY}
+        RABBIT_MQ_HOST: ${RABBIT_MQ_HOST}
+        RABBIT_MQ_USERNAME: ${RABBIT_MQ_USERNAME}
+        RABBIT_MQ_PASSWORD: ${RABBIT_MQ_PASSWORD}
+        RABBIT_MQ_PORT: ${RABBIT_MQ_PORT}
+
   scraper:
     build:
       context: .
@@ -28,6 +33,25 @@ services:
         RAPID_API_INSTAGRAM_HOST: ${RAPID_API_INSTAGRAM_HOST}
         RAPID_API_KEY: ${RAPID_API_KEY}
         GEMINI_API_KEY: ${GEMINI_API_KEY}
+  bot:
+    build:
+      context: .
+      dockerfile: src/services/bot/Dockerfile
+    container_name: bot_service
+    environment:
+        SUPABASE_URL: ${SUPABASE_URL}
+        SUPABASE_KEY: ${SUPABASE_KEY}
+        RAPID_API_INSTAGRAM_HOST: ${RAPID_API_INSTAGRAM_HOST}
+        RAPID_API_KEY: ${RAPID_API_KEY}
+        GEMINI_API_KEY: ${GEMINI_API_KEY}
+        BOT_STORAGE_SESSION_FOLDER: ${BOT_STORAGE_SESSION_FOLDER}
+        RABBIT_MQ_HOST: ${RABBIT_MQ_HOST}
+        RABBIT_MQ_USERNAME: ${RABBIT_MQ_USERNAME}
+        RABBIT_MQ_PASSWORD: ${RABBIT_MQ_PASSWORD}
+        RABBIT_MQ_PORT: ${RABBIT_MQ_PORT}
+
+    volumes:
+      - ./Sessions:/app/Sessions
 
 
 
