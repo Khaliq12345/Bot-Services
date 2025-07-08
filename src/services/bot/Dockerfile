@@ -26,7 +26,7 @@ RUN mkdir -p /app/Sessions
 # Install dependencies using uv
 RUN uv sync --frozen
 
-RUN playwright install
+RUN uv run playwright install
 
 # Command to run the service
 CMD ["uv", "run", "comment_bot.py"]
