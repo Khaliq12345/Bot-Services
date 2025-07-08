@@ -17,7 +17,7 @@ ENV PATH="/root/.local/bin/:$PATH"
 WORKDIR /app
 
 # Copy project files
-COPY src/services/dispatcher /app
+COPY src/services/bot /app
 COPY pyproject.toml uv.lock .python-version /app/
 
 # Create the Session folder
