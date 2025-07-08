@@ -26,6 +26,7 @@ RUN mkdir -p /app/Sessions
 # Install dependencies using uv
 RUN uv sync --frozen
 
+RUN uv run playwright install-deps 
 RUN uv run playwright install
 
 # Command to run the service
