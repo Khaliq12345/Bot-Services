@@ -20,9 +20,6 @@ WORKDIR /app
 COPY src/services/bot /app
 COPY pyproject.toml uv.lock .python-version /app/
 
-# Create the Session folder
-RUN mkdir -p /app/Sessions
-
 # Install dependencies using uv
 RUN uv sync --frozen
 

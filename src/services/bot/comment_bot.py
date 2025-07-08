@@ -1,10 +1,10 @@
+import os
 import json
 from typing import List, Optional
 from playwright.sync_api import Page, sync_playwright, Playwright
 from contextlib import contextmanager
 from datetime import datetime
 from core.config import (
-    BOT_STORAGE_SESSION_FOLDER,
     SUPABASE_KEY,
     SUPABASE_URL,
 )
@@ -21,16 +21,19 @@ def run(playwright: Playwright, username: str, user_id: str):
     # start up the browser and load session if available
     chromium = playwright.firefox  # or "firefox" or "webkit".
     browser = chromium.launch(slow_mo=3000)
-    context = browser.new_context(
-        storage_state=f"./{BOT_STORAGE_SESSION_FOLDER}/{username}.json"
-    )
+
+    client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    with open(f"{username}.json", "wb+") as f:
+        response = client.storage.from_("sessions").download(f"{username}.json")
+        f.write(response)
+    context = browser.new_context(storage_state=f"./{username}.json")
+    os.remove(f"{username}.json")
     page = context.new_page()
     try:
         yield page
     except Exception as e:
         # Save the status to db
         print(f"Browser Error - {e}")
-        client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
         client.table("bot_status").insert(
             {
                 "creator": username,

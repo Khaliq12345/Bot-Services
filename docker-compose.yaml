@@ -50,8 +50,4 @@ services:
         RABBIT_MQ_PASSWORD: ${RABBIT_MQ_PASSWORD}
         RABBIT_MQ_PORT: ${RABBIT_MQ_PORT}
 
-    volumes:
-      - ./Sessions:/app/Sessions
-
-
 
