@@ -1,7 +1,9 @@
+from datetime import datetime
 from supabase_service import (
     get_token_if_exist,
     save_username_token,
     send_data_to_supabase,
+    get_supabase_sync,
 )
 from concurrent.futures import ThreadPoolExecutor
 from get_gender import start_gender_service
@@ -115,49 +117,76 @@ def anaylse_usernames(usernames: list[str]):
 
 
 def main(input_list: list[str], total_results: int):
+    client = get_supabase_sync()
+
     # Initialise the variable to use
     already_got = 0
     if input_list.count == 0:
         return None
 
-    # starting the iteration of the input usernames
-    for index, username in enumerate(input_list):
-        if already_got >= total_results:
-            break
-        print(
-            f"*** Processing Username n* {index} : {username} | total_results_to_get: {total_results} | already_got: {already_got}"
-        )
-        try:
-            next_for_follower = True
-            while next_for_follower:
-                # Check if any token is registered for the username
-                token_next_for_follower = get_token_if_exist(username)
-                if not token_next_for_follower:
-                    save_username_token(username)
-                print(
-                    f"-- Before processing : username --> {username} ; token --> {token_next_for_follower}"
-                )
-                follower_list, token_next_for_follower = get_followers(
-                    username, token_next_for_follower
-                )
-                if not follower_list:
-                    break
-                added = anaylse_usernames(follower_list)
-                # Update the token for the username
-                save_username_token(
-                    username=username, token=token_next_for_follower
-                )
-                print(f"Total added: {added}")
-                already_got += added
-                print(
-                    f"** Ok - Username added | Total: {already_got}/{total_results}"
-                )
-                if already_got >= total_results:
-                    next_for_follower = False
-                    break
+    # starting
+    job_infos = (
+        client.table("scraping_status").insert({"status": "running"}).execute()
+    )
+    job_info = job_infos.data[0]
 
-        except Exception as e:
-            print(f"Error processing username {username}: {e}")
+    # starting the iteration of the input usernames
+    try:
+        for index, username in enumerate(input_list):
+            if already_got >= total_results:
+                break
+            print(
+                f"*** Processing Username n* {index} : {username} | total_results_to_get: {total_results} | already_got: {already_got}"
+            )
+            try:
+                next_for_follower = True
+                while next_for_follower:
+                    # Check if any token is registered for the username
+                    token_next_for_follower = get_token_if_exist(username)
+                    if not token_next_for_follower:
+                        save_username_token(username)
+                    print(
+                        f"-- Before processing : username --> {username} ; token --> {token_next_for_follower}"
+                    )
+                    follower_list, token_next_for_follower = get_followers(
+                        username, token_next_for_follower
+                    )
+                    if not follower_list:
+                        break
+                    added = anaylse_usernames(follower_list)
+                    # Update the token for the username
+                    save_username_token(
+                        username=username, token=token_next_for_follower
+                    )
+                    print(f"Total added: {added}")
+                    already_got += added
+                    print(
+                        f"** Ok - Username added | Total: {already_got}/{total_results}"
+                    )
+                    if already_got >= total_results:
+                        next_for_follower = False
+                        break
+
+            except Exception as e:
+                print(f"Error processing username {username}: {e}")
+        client.table("scraping_status").update(
+            {
+                "id": job_info.get("id"),
+                "status": "success",
+                "end_time": datetime.now().isoformat(),
+                "items_scraped": already_got,
+            }
+        ).eq("id", job_info.get("id")).execute()
+
+    except Exception as e:
+        client.table("scraping_status").update(
+            {
+                "id": job_info.get("id"),
+                "status": "failed",
+                "error": str(e),
+                "end_time": datetime.now().isoformat(),
+            }
+        ).eq("id", job_info.get("id")).execute()
 
     print("DONE!")
 

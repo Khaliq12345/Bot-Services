@@ -11,6 +11,11 @@ from core.config import (
 from ai_messenger import generate_comment_from_user_last_post
 from pika_service import get_pika_session
 from supabase import Client, create_client
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument("--headless", action="store_true")
+args = parser.parse_args()
 
 # Note; username == creator and user_username == the user the bot is interacting with
 TIMEOUT = 60000
@@ -20,7 +25,7 @@ TIMEOUT = 60000
 def run(playwright: Playwright, username: str, user_id: str):
     # start up the browser and load session if available
     chromium = playwright.firefox  # or "firefox" or "webkit".
-    browser = chromium.launch(slow_mo=3000)
+    browser = chromium.launch(slow_mo=3000, headless=args.headless)
 
     client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     with open(f"{username}.json", "wb+") as f:
@@ -130,4 +135,5 @@ def main():
 
 if __name__ == "__main__":
     print("Waiting for the a record to be dispatch")
+    print(args.headless, "headless")
     main()
