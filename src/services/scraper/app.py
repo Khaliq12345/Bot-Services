@@ -12,6 +12,12 @@ import requests
 from user_info import get_user_infos
 from the_retry import retry
 from exceptions_client import exceptions
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument("--users", type=str)
+parser.add_argument("--limit", type=int)
+args = parser.parse_args()
 
 
 @retry(attempts=5, expected_exception=exceptions)
@@ -192,4 +198,6 @@ def main(input_list: list[str], total_results: int):
 
 
 if __name__ == "__main__":
-    main(["remotevagabond"], 10)
+    users = args.users.split(";")
+    print(users, args.limit)
+    main(users, args.limit)

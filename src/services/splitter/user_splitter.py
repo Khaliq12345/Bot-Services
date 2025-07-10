@@ -1,3 +1,4 @@
+from postgrest.types import CountMethod
 from supabase import Client, create_client
 from core.config import SUPABASE_KEY, SUPABASE_URL
 from datetime import timedelta, datetime
@@ -9,9 +10,10 @@ args = parser.parse_args()
 
 NEXT_30_DAYS = datetime.now() + timedelta(30)
 START_DATE = datetime.now()
+COUNT = None
 
 
-def share_creator(creator: str, limit: int):
+def share_creator(creator: str, limit: int, total_creators: int):
     """
     Share the creator among users
 
@@ -19,21 +21,23 @@ def share_creator(creator: str, limit: int):
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     response = (
         supabase.table("users")
-        .select("*")
+        .select("*", count=CountMethod.exact)
         .is_("assigned", "null")
         .or_(
             f"last_interaction_date.is.null,last_interaction_date.gt.{NEXT_30_DAYS}"
         )
         .execute()
     )
-
-    global START_DATE
-
-    start_time = START_DATE + timedelta(hours=2)
+    global COUNT
+    if not COUNT:
+        print("Updating count")
+        COUNT = response.count
 
     # go through the users and assign to valid users
+    if not COUNT:
+        return None
     added = 0
-    for record in response.data:
+    for record in response.data[: int(COUNT / total_creators)]:
         if added == limit:
             print("Limit reached")
             break
@@ -41,22 +45,26 @@ def share_creator(creator: str, limit: int):
         if (past_creators) and (creator in past_creators):
             print("Creator has already interacted with user skipping")
             continue
-        start_time += timedelta(minutes=10)
-        supabase.table("users").update(
-            {"assigned": creator, "scheduled_at": start_time.isoformat()}
-        ).eq("id", record.get("id")).execute()
+        supabase.table("users").update({"assigned": creator}).eq(
+            "id", record.get("id")
+        ).execute()
         added += 1
 
 
 def main():
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    response = supabase.table("creators").select("*").execute()
+    response = (
+        supabase.table("creators")
+        .select("*", count=CountMethod.exact)
+        .execute()
+    )
+    total = response.count
     for creator in response.data:
         creator_username = creator["creator"]
         print(f"creator - {creator_username}")
-        share_creator(creator_username, args.limit)
+        if total:
+            share_creator(creator_username, args.limit, total)
 
 
 if __name__ == "__main__":
-    print(args.limit + 10)
     main()
