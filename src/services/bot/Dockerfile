@@ -27,4 +27,4 @@ RUN uv run playwright install-deps
 RUN uv run playwright install
 
 # Command to run the service
-CMD ["uv", "run", "comment_bot.py"]
+CMD ["uv", "run", "comment_bot.py", "--headless"]

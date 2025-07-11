@@ -22,7 +22,9 @@ TIMEOUT = 60000
 
 
 @contextmanager
-def run(playwright: Playwright, username: str, user_id: str):
+def run(
+    playwright: Playwright, username: str, user_id: str, bot_status_id: int
+):
     # start up the browser and load session if available
     chromium = playwright.firefox  # or "firefox" or "webkit".
     browser = chromium.launch(slow_mo=3000, headless=args.headless)
@@ -39,16 +41,13 @@ def run(playwright: Playwright, username: str, user_id: str):
     except Exception as e:
         # Save the status to db
         print(f"Browser Error - {e}")
-        client.table("bot_status").insert(
+        client.table("bot_status").update(
             {
-                "creator": username,
-                "bot_type": "comment",
                 "status": "failed",
                 "last_error": str(e),
                 "last_run": datetime.now().isoformat(),
-                "user": user_id,
             }
-        ).execute()
+        ).eq("id", bot_status_id).execute()
     finally:
         # close browser and context
         page.close()
@@ -77,24 +76,36 @@ def write_comment(page: Page, user_id: str) -> Optional[str]:
 def send_comment(
     username: str, user_id: str, past_creators: Optional[List[str]]
 ):
+    client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+    # show that bot is running
+    response = (
+        client.table("bot_status")
+        .insert(
+            {
+                "creator": username,
+                "bot_type": "comment",
+                "status": "running",
+                "user": user_id,
+            }
+        )
+        .execute()
+    )
+    bot_status = response.data[0]
     with sync_playwright() as playwright:
-        with run(playwright, username, user_id) as page:
+        with run(playwright, username, user_id, bot_status["id"]) as page:
             post_link = write_comment(page, user_id=user_id)
             page.wait_for_timeout(60000)
 
             # Save the status to db
-            client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-            client.table("bot_status").insert(
+            client.table("bot_status").update(
                 {
-                    "creator": username,
-                    "bot_type": "comment",
                     "status": "success",
                     "last_error": None,
                     "last_run": datetime.now().isoformat(),
-                    "user": user_id,
                     "post_link": post_link,
                 }
-            ).execute()
+            ).eq("id", bot_status["id"]).execute()
 
             # Update the user also
             if past_creators:
@@ -107,6 +118,7 @@ def send_comment(
                     "past_creators": past_creators,
                 }
             ).eq("user_id", user_id).execute()
+            print("SUCCESS")
 
 
 def main():
