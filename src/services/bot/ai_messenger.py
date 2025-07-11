@@ -75,7 +75,7 @@ def generate_comment_from_user_last_post(
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=[
-            "Return a messaage that I can send as a comment, I want something cute and flirty",
+            "Return a messaage that I can send as a comment, I want something cute and flirty, but if the situation is different or a serious one provide an appropriate comment",
             image,
         ],
         config={

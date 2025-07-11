@@ -12,6 +12,7 @@ from ai_messenger import generate_comment_from_user_last_post
 from pika_service import get_pika_session
 from supabase import Client, create_client
 from argparse import ArgumentParser
+from datetime import datetime
 
 parser = ArgumentParser()
 parser.add_argument("--headless", action="store_true")
@@ -28,13 +29,19 @@ def run(
     # start up the browser and load session if available
     chromium = playwright.firefox  # or "firefox" or "webkit".
     browser = chromium.launch(slow_mo=3000, headless=args.headless)
+    unique_id = int(datetime.now().timestamp())
 
     client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    with open(f"{username}.json", "wb+") as f:
+    with open(f"{unique_id}.json", "wb+") as f:
         response = client.storage.from_("sessions").download(f"{username}.json")
         f.write(response)
-    context = browser.new_context(storage_state=f"./{username}.json")
-    os.remove(f"{username}.json")
+
+    context = browser.new_context(storage_state=f"./{unique_id}.json")
+    os.remove(f"{unique_id}.json")
+
+    # Save storage state into the file.
+    context.storage_state(path=f"{unique_id}_new.json")
+
     page = context.new_page()
     try:
         yield page
@@ -53,6 +60,19 @@ def run(
         page.close()
         context.close()
         browser.close()
+
+        # save to supabase
+        with open(f"./{unique_id}_new.json", "rb") as f:
+            (
+                client.storage.from_("sessions").upload(
+                    file=f,
+                    path=f"{username}.json",
+                    file_options={"cache-control": "3600", "upsert": "true"},
+                )
+            )
+
+        # remove file from storage
+        os.remove(f"{unique_id}_new.json")
 
 
 def write_comment(page: Page, user_id: str) -> Optional[str]:
