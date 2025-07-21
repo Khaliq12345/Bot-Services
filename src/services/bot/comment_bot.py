@@ -55,6 +55,11 @@ def run(
                 "last_run": datetime.now().isoformat(),
             }
         ).eq("id", bot_status_id).execute()
+        client.table("users").update(
+            {
+                "last_interaction_date": datetime.now().isoformat(),
+            }
+        ).eq("user_id", user_id).execute()
     finally:
         # close browser and context
         page.close()

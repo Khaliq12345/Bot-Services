@@ -26,6 +26,7 @@ def get_last_post(user_id: str) -> tuple[bytes, str] | tuple[None, None]:
 
     :param user_id: user_id of the creator
     """
+    print(config.RAPID_API_INSTAGRAM_HOST, config.RAPID_API_KEY)
     url = f"https://{config.RAPID_API_INSTAGRAM_HOST}/v1/posts"
     querystring = {"username_or_id_or_url": user_id}
     headers = {
